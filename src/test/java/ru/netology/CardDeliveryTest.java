@@ -1,16 +1,11 @@
 package ru.netology;
 
 import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Configuration;
-import com.codeborne.selenide.Selectors;
-import com.codeborne.selenide.SelenideElement;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -19,75 +14,87 @@ import static com.codeborne.selenide.Selectors.byText;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 
+
 public class CardDeliveryTest {
-    static class Form {
-        private WebDriver driver;
 
-        @Test
-        void cardDeliveryTest() throws InterruptedException {
-            Date currentDate = new Date();
+    int FUTURE_DATE = 7;
 
-            Calendar c = Calendar.getInstance();
-            c.setTime(currentDate);
-            c.add(Calendar.DATE, 3);
+    private static String methodDate(int days) {
+        Date currentDate = new Date();
 
-            Date currentDatePlusThree = c.getTime();
-            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+        Calendar c = Calendar.getInstance();
+        c.setTime(currentDate);
+        c.add(Calendar.DATE, days);
 
-            open("http://localhost:9999/");
+        Date extendedDate = c.getTime();
+        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+        return dateFormat.format(extendedDate);
+    }
 
-            $("#root > .App_appContainer__3jRx1").waitUntil(Condition.visible, 5000);
-            $(".input__control[type=text]").setValue("Москва");
+    private static long methodTimestamp(int days) {
+        Date currentDate = new Date();
 
-            $(".input__control[type=tel][placeholder='Дата встречи'").sendKeys(Keys.CONTROL, "a");
-            $(".input__control[type=tel][placeholder='Дата встречи'").sendKeys(Keys.DELETE);
-            Thread.sleep(1000);
+        Calendar c = Calendar.getInstance();
+        c.setTime(currentDate);
+        c.add(Calendar.DATE, days);
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
 
-            $(".input__control[type=tel][placeholder='Дата встречи'").sendKeys(dateFormat.format(currentDatePlusThree));
+        Date extendedDate = c.getTime();
+        return extendedDate.getTime();
+    }
 
-            $(".input__control[name=name]").sendKeys("Иванов Иван");
+    @Test
+    void cardDeliveryTest() {
 
-            $(".input__control[name=phone]").sendKeys("+79061234567");
-            $("span.checkbox__box").click();
-            Thread.sleep(2000);
+        open("http://localhost:9999/");
 
-            $("span.button__text").click();
-            $(".notification[data-test-id=notification]").waitUntil(Condition.visible, 15000);
-            $(".notification[data-test-id=notification]").shouldHave(text("Успешно!"));
-            $(".notification[data-test-id=notification]").shouldHave(text("Встреча успешно забронирована на " + dateFormat.format(currentDatePlusThree)));
-        }
+        $("#root > .App_appContainer__3jRx1").waitUntil(Condition.visible, 5000);
+        $(".input__control[type=text]").setValue("Москва");
 
-        @Test
-        void CardDeliveryWithClicksTest() throws InterruptedException {
-            open("http://localhost:9999/");
+        $(".input__control[type=tel][placeholder='Дата встречи'").sendKeys(Keys.CONTROL, "a");
+        $(".input__control[type=tel][placeholder='Дата встречи'").sendKeys(Keys.DELETE);
 
-            $("#root > .App_appContainer__3jRx1").waitUntil(Condition.visible, 5000);
-            $(".input__control[type=text]").setValue("Мос");
-            $(".popup").isDisplayed();
-            $(byText("Москва")).click();
+        $(".input__control[type=tel][placeholder='Дата встречи'").sendKeys(methodDate(FUTURE_DATE));
 
-            $(".input__control[type=tel][placeholder='Дата встречи'").click();
-            Thread.sleep(1000);
-            $(".calendar[role=grid]").isDisplayed();
+        $(".input__control[name=name]").sendKeys("Иванов Иван");
 
-            $(".calendar__arrow[data-step='1']").click();
-            $(".calendar__arrow[data-step='1']").click();
-            $(".calendar__arrow[data-step='1']").click();
-            Thread.sleep(1000);
-            $("table.calendar__layout").shouldHave(text("10")).click();
-            String data = $(".input__control[type=tel][placeholder='Дата встречи'").getText();
-            Thread.sleep(3000);
+        $(".input__control[name=phone]").sendKeys("+79061234567");
+        $("span.checkbox__box").click();
 
-            $(".input__control[name=name]").sendKeys("Иванов Иван");
+        $("span.button__text").click();
+        $(".notification[data-test-id=notification]").waitUntil(Condition.visible, 15000);
+        $(".notification[data-test-id=notification]").shouldHave(text("Успешно!"));
+        $(".notification[data-test-id=notification]").shouldHave(text("Встреча успешно забронирована на " + methodDate(FUTURE_DATE)));
+    }
 
-            $(".input__control[name=phone]").sendKeys("+79061234567");
-            $("span.checkbox__box").click();
-            Thread.sleep(2000);
+    @Test
+    void CardDeliveryWithClicksTest() {
+        open("http://localhost:9999/");
 
-            $("span.button__text").click();
-            $(".notification[data-test-id=notification]").waitUntil(Condition.visible, 15000);
-            $(".notification[data-test-id=notification]").shouldHave(text("Успешно!"));
-            $(".notification[data-test-id=notification]").shouldHave(text(data));
-        }
+        $("#root > .App_appContainer__3jRx1").waitUntil(Condition.visible, 5000);
+        $(".input__control[type=text]").setValue("Мос");
+        $(".popup").isDisplayed();
+        $(byText("Москва")).click();
+
+        $(".input__control[type=tel][placeholder='Дата встречи'").click();
+        $(".calendar[role=grid]").isDisplayed();
+
+        long extendedTimestamp = methodTimestamp(FUTURE_DATE);
+        String extended = String.valueOf(extendedTimestamp);
+        $("tr.calendar__row  td.calendar__day[data-day=\"" + extended + "\"]").click();
+        String date = $(".input__control[type=tel]").getText();
+
+        $(".input__control[name=name]").sendKeys("Иванов Иван");
+
+        $(".input__control[name=phone]").sendKeys("+79061234567");
+        $("span.checkbox__box").click();
+
+        $("span.button__text").click();
+        $(".notification[data-test-id=notification]").waitUntil(Condition.visible, 15000);
+        $(".notification[data-test-id=notification]").shouldHave(text("Успешно!"));
+        $(".notification[data-test-id=notification]").shouldHave(text("Встреча успешно забронирована на " + date));
     }
 }
